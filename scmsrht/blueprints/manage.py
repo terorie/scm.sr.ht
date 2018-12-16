@@ -116,6 +116,9 @@ def settings_access_POST(owner_name, repo_name):
     valid.expect(user,
             "I don't know this user. Have they logged into this service before?",
             field="user")
+    valid.expect(user.id != current_user.id,
+            "You can't adjust your own access controls. You always have full read/write access.",
+            field="user")
     if not valid.ok:
         return render_template("settings_access.html",
                 owner=owner, repo=repo, **valid.kwargs)
