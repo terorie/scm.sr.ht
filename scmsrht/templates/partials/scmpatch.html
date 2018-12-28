@@ -1,0 +1,61 @@
+{% import "scmutils.html" as utils with context %}
+
+<div class="container">
+  <div class="row">
+    <div class="col-md-10">
+      <div class="event-list">
+        <div class="event">
+          {{ utils.commit_event(repo, commit, full=True) }}
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div style="margin-bottom: 1rem">
+        {% if patch_url -%}
+        <a
+          href="{{patch_url}}"
+          class="btn btn-primary btn-block"
+        >{{patch_label|default('patch')}} {{icon("caret-right")}}</a>
+        {% endif -%}
+        {% if browse_url -%}
+        <a
+          href="{{browse_url}}"
+          class="btn btn-default btn-block"
+        >{{browse_label|default('browse')}} {{icon("caret-right")}}</a>
+        {% endif -%}
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-12">
+      <div class="event-list">
+        <div class="event">
+          <pre>{{stats.count_files}} files changed, <strong 
+             class="text-success">{{stats.count_insertions}}</strong> insertions(+), <strong
+             class="text-danger">{{stats.count_deletions}}</strong> deletions(-)
+
+{% for change in changes -%}
+ {{change.status_char}} {% if change.old_file.path != change.new_file.path %}{{change.old_file.path}} =&gt; {% endif %}<a href="{{change.new_file.url}}">{{change.new_file.path}}</a>
+{% endfor -%}
+          </pre>
+        </div>
+        <div style="margin-bottom: 2rem"></div>
+        {% for change in changes -%}
+          <pre style="margin-bottom: 0;">{{change.status_char}} {% if change.old_file.path != change.new_file.path -%}
+<a href="{{change.old_file.url}}" id="{{change.old_file.path}}">{{change.old_file.path}}</a> =&gt; {% endif %}<a href="{{change.new_file.url}}" id="{{change.new_file.path}}">{{change.new_file.path}}</a> <span class="pull-right"><span class="text-success">+{{change.count_insertions}}</span> <span class="text-danger">-{{change.count_deletions}}</span></span></pre>
+        <div class="event diff">
+          <pre>
+          {%- for hunk in change.hunks -%}
+{% set hunk_index = loop.index -%}
+<strong class="text-info">@@ <a style="text-decoration: underline" href="{{change.old_file.url}}#L{{hunk.old_start}}">{{hunk.old_start}}</a>,{{hunk.old_lines}} <a style="text-decoration: underline" href="{{change.new_file.url}}#L{{hunk.new_start}}">{{hunk.new_start}}</a>,{{hunk.new_lines}} @@</strong>{% if hunk.old_start == 0 %}
+{% endif -%}
+{% for line in hunk.lines -%}
+<span class="{% if line.inserted %}text-success{% elif line.deleted %}text-danger{% endif %}"><a href="#{{change.old_file.path}}-{{hunk_index}}-{{loop.index}}" id="{{change.old_file.path}}-{{hunk_index}}-{{loop.index}}" style="color: inherit">{% if line.inserted %}+{% elif line.deleted %}-{% else %} {% endif %}</a>{% if loop.first and hunk.old_start != 0 %}{{line.content.lstrip()}}{% else %} {{line.content}}{% endif %}</span>{% endfor %}
+{% endfor -%}
+          </pre>
+        {% endfor -%}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

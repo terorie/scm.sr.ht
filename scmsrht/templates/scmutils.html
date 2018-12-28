@@ -1,0 +1,56 @@
+{% macro breadcrumb(repo, ref, path_parts, display_ref_prefix) %}
+{% if display_ref_prefix -%}
+<span style="margin-right: 1rem">
+  <span class="text-muted">{{ scmreflabel }}:</span> {{ ref }}
+</span>
+{% endif -%}
+{% for part in path_parts -%}
+{% if loop.last %}{{ part.name }}{% else %}<a href="{{ part.url }}">{{ part.name }}</a>/{% endif -%}
+{% endfor -%}
+{% endmacro %}
+
+{% macro commit_event(repo, commit, full=False, skip_body=False) %}
+<div>
+  {{commit.prefix|default('')}}<a href="{{commit.url}}" title="{{commit.long_id}}"
+  >{{commit.short_id}}</a>
+  &mdash;
+  {% set author_user = lookup_user(commit.author_email) %}
+  {% if author_user %}
+  <a href="{{url_for("public.user_index",
+    username=author_user.username)}}">{{commit.author_name}}</a>
+  {% else %}
+  {{commit.author.name}}
+  {% endif %}
+
+  {% if commit.parents %}
+  <span style="margin-left: 0.5rem">
+    {{icon('code-branch', cls="sm")}}
+    {% for parent in commit.parents %}
+    <a href="{{parent.url}}">{{parent.short_id}}</a>
+    {% if not loop.last %} + {% endif %}
+    {% endfor %}
+  </span>
+  {% endif %}
+
+  {% if commit.refs %}
+  <span style="margin-left: 0.5rem">
+    {% for ref in commit.refs %}
+    <a class="ref {{ref.type}}" href="{{ref.url}}">{{ref.name}}</a>
+    {% endfor %}
+  </span>
+  {% endif %}
+
+  <a
+    id="log-{{commit.long_id}}"
+    href="#log-{{commit.long_id}}"
+    class="text-muted pull-right"
+  >{{ commit.date | date }}</a>
+</div>
+{% if not skip_body %}
+{% if full %}
+<pre>{{ commit.desc }}</pre>
+{% else %}
+<pre>{{ commit.desc_first_line }}</pre>
+{% endif %}
+{% endif %}
+{% endmacro %}

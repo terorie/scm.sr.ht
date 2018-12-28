@@ -1,0 +1,19 @@
+{% import "scmutils.html" as utils with context %}
+
+<div class="container">
+  <div class="row">
+    <div class="col-md-12">
+      <div class="event-list">
+        {% for commit in commits %}
+        <div class="event">
+          {{ utils.commit_event(repo, commit, full=True) }}
+        </div>
+        {% endfor %}
+      </div>
+      {% if next_page_url  %}
+      <a
+        class="pull-right btn btn-primary"
+        href="{{next_page_url}}">Next {{icon("caret-right")}}</a>
+      {% endif %}
+    </div>
+</div>

@@ -1,0 +1,46 @@
+{% import "scmutils.html" as utils with context %}
+
+<div class="container">
+  <div class="row">
+    <div class="col-md-6">
+      <div class="event-list">
+        {% for tag in tags %}
+        <div class="event">
+          <h4 style="margin-bottom: 0.5rem">
+            <a href="{{tag.url}}">{{tag.name}}</a>
+            <small class="pull-right text-muted">
+              {{tag.date | date}}
+              <a style="margin-left: 0.5rem"
+                href="{{tag.archive_url}}"
+              >.tar.gz {{icon("caret-right")}}</a>
+              <a
+                style="margin-left: 0.5rem"
+                href="{{tag.browse_url}}"
+              >browse {{icon("caret-right")}}</a>
+            </small>
+          </h4>
+          {% if tag.message %}
+          <pre style="padding-bottom: 0;">{{tag.message}}</pre>
+          {% endif %}
+        </div>
+        {% endfor %}
+        {{ pagination() }}
+      </div>
+    </div>
+    <div class="col-md-6">
+      <h3>Branches</h3>
+      <div class="event-list">
+        {% for branch in branches %}
+        <div class="event">
+          {{branch.name}}
+          {{ utils.commit_event(repo, branch, skip_body=True) }}
+          <a
+            href="{{branch.browse_url}}"
+            class="btn btn-block {{ "btn-primary" if branch.is_default else "btn-default" }}"
+          >browse {{icon("caret-right")}}</a>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>

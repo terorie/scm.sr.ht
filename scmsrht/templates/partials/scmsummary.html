@@ -1,0 +1,70 @@
+{% import "scmutils.html" as utils with context %}
+
+{# Summary page for an SCM repo
+
+   Requires:
+
+   - `commits`: a list of commits that can be passed to a `commit_event`
+   function.
+
+   - `refstitle` and `refs`: the term for important revisions/tags/branches to
+   show, and a list of such revisions. Each should have a `name` and an
+   `actions` list, wich each action having a `name` and an `url`.
+
+   - a list of `clone_urls`, where each has a `desc` (description) and a `url`.
+
+   - `readme` html content.
+   
+#}
+
+{% if repo.description %}
+<div class="header-extension">
+  <div class="container">
+    {{ repo.description }}
+  </div>
+</div>
+{% endif %}
+<div class="container">
+  <div class="row" style="margin-bottom: 1rem">
+    <div class="col-md-6">
+      <div class="event-list" style="margin-bottom: 0.5rem">
+        {% for commit in commits %}
+        <div class="event">
+          {{ utils.commit_event(repo, commit) }}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="col-md-2">
+      <h3>{{refstitle}}</h3>
+      <dl>
+        {% for ref in refs %}
+        <dt>{{ ref.name }}</dt>
+        <dd>
+          {% for action in ref.actions %}
+          <a href="{{action.url}}">{{action.name}} {{icon("caret-right")}}</a>
+          {% endfor %}
+        </dd>
+        {% endfor %}
+      </dl>
+    </div>
+    <div class="col-md-4">
+      <h3>clone</h3>
+      <dl>
+        {% for url in clone_urls %}
+        <dt>{{url.desc}}</dt>
+        {% if url.link %}<dd><a href="{{url.url}}">{{url.url}}</a></dd>
+        {% else %}<dd>{{url.url}}</dd>
+        {% endif -%}
+        {% endfor -%}
+      </dl>
+    </div>
+  </div>
+  {% if readme %}
+  <div class="row">
+    <div class="col-md-10">
+      {{ readme }}
+    </div>
+  </div>
+  {% endif %}
+</div>

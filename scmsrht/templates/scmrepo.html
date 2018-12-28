@@ -1,0 +1,46 @@
+{% extends "scmbase.html" %}
+
+{% block title %}
+<title>{{owner.canonical_name}}/{{repo.name}} - {{cfg("sr.ht", "site-name")}} {{scmname}}</title>
+{% endblock %}
+
+{% block head %}
+{% if repo.visibility.value =='unlisted' %}
+<meta name="robots" content="noindex">
+{% endif %}
+{% endblock %}
+
+{% macro tabitem(path, title) %}
+<li class="nav-item">
+{% if path -%}
+<a
+  class="nav-link {% if view == title %}active{% endif %}"
+  href="{{ path }}">{{ title }}</a>
+{% else -%}
+<a class="nav-link {% if view == title %}active{% endif %}">{{ title }}</a>
+{% endif -%}
+</li>
+{% endmacro %}
+
+{% block body %}
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-md-12 header-tabbed">
+      <h2>
+        <a href="{{ url_for("public.user_index", 
+          username=owner.username) }}">{{owner.canonical_name}}</a>/{{repo.name}}
+      </h2>
+      <ul class="nav nav-tabs">
+        {% block tabs %}
+        {% if current_user.id == repo.owner_id %}
+        {{tabitem(url_for("manage.settings_info",
+            owner_name=repo.owner.canonical_name,
+            repo_name=repo.name), 'settings')}}
+        {% endif %}
+        {% endblock %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% block content %}{% endblock %}
+{% endblock %}

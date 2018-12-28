@@ -1,0 +1,72 @@
+{% import "scmutils.html" as utils with context %}
+
+<div class="header-extension">
+  <div class="container-fluid">
+    <span style="padding-left: 1rem">
+      {{ utils.breadcrumb(repo, ref, path_parts, display_ref_prefix) }}
+    </span>
+    <div class="pull-right">
+      <a href="{{commit.url}}">{{commit.short_id}}</a> &mdash;
+      {% set author_user = lookup_user(commit.author_email) %}
+      {% if author_user %}
+      <a href="{{url_for("public.user_index",
+        username=author_user.username)}}">{{commit.author_name}}</a>
+      {% else %}
+      {{commit.author_name}}
+      {% endif %}
+      {{commit.desc_first_line}}
+      <span class="text-muted">
+        {{ commit.date | date }}
+      </span>
+    </div>
+    <div class="clearfix"></div>
+  </div>
+</div>
+<div class="container-fluid">
+  <div class="row" style="margin-bottom: 1rem">
+    <div class="col-md-12">
+      <div class="tree-list">
+      {% if parent_path_url -%}
+      <div class="mode"></div>
+      <div class="name tree">
+        <a href="{{parent_path_url}}">..</a>
+      </div>
+      <div class="commit"></div>
+      <div class="date"></div>
+      <div class="size"></div>
+      {% endif -%}
+      {% for entry in entries -%}
+      <div class="mode">
+        {% if entry.type == 'file' -%}
+        <span title="{{"{0:0o}".format(entry.perm)}}">
+          {{stat.filemode(entry.perm)}}
+        </span>
+        {% else -%}
+        <span>d---------</span>
+        {% endif -%}
+      </div>
+      <div class="name {{entry.type}}">
+        <a href="{{entry.browse_url}}">{{entry.name}}{% if entry.type == "dir" %}/{% endif %}</a>
+      </div>
+      <div class="commit">
+        {% if entry.commit_url %}
+        <a href="{{entry.commit_url}}">{{trim_commit(entry.commit.message)}}</a>
+        {% endif %}
+      </div>
+      <div class="date">
+        {% if entry.commit %}
+        {{ commit_time(entry.commit) | date }}
+        {% endif %}
+      </div>
+      <div class="size">
+        {% if entry.type == "file" %}
+        <span title="{{ entry.size }} bytes">
+          {{humanize.naturalsize(entry.size,
+            binary=True).replace("Byte", "byte")}}
+        </span>
+        {% endif %}
+      </div>
+      {% endfor -%}
+    </div>
+  </div>
+</div>

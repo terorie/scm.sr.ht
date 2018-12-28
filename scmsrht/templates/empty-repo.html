@@ -1,0 +1,32 @@
+{% extends "scmrepo.html" %}
+
+{% block tabs %}
+  <li class="nav-item">
+    <a class="nav-link active">summary</a>
+  </li>
+  {{ super() }}
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="row" style="margin-bottom: 1rem">
+    <div class="col-md-4">
+      <h3>clone</h3>
+      <dl>
+        {% for url in clone_urls %}
+        <dt>{{url.desc}}</dt>
+        {% if url.link %}<dd><a href="{{url.url}}">{{url.url}}</a></dd>
+        {% else %}<dd>{{url.url}}</dd>
+        {% endif -%}
+        {% endfor -%}
+      </dl>
+    </div>
+    <div class="col-md-8">
+      <p>
+        Nothing here yet!
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
