@@ -1,31 +1,23 @@
-from scmsrht.repos import RepoApi
-from scmsrht.types import User
-from srht.flask import SrhtFlask
 from jinja2 import FileSystemLoader, ChoiceLoader
+from srht.database import db
+from srht.flask import SrhtFlask
 import os
 
-def lookup_user(email):
-    return User.query.filter(User.email == email).one_or_none()
+class ScmSrhtFlask(SrhtFlask):
+    def __init__(self, site, name, *,
+                access_class, redirect_class, repository_class, user_class,
+                repo_api,
+                **kwargs):
+        super().__init__(site, name, **kwargs)
 
-def lookup_or_register(db, exchange, profile, scopes):
-    user = User.query.filter(User.username == profile["username"]).first()
-    if not user:
-        user = User()
-        db.session.add(user)
-    user.username = profile.get("username")
-    user.email = profile.get("email")
-    user.paid = profile.get("paid")
-    user.oauth_token = exchange["token"]
-    user.oauth_token_expires = exchange["expires"]
-    user.oauth_token_scopes = scopes
-    db.session.commit()
-    return user
+        self.User = user_class
 
-class ScmFlask(SrhtFlask):
-    def __init__(self, site, name, db, repo_api_class):
-        super().__init__(site, name)
-        self.db = db
-        self._repo_api_class = repo_api_class
+        self.Access = access_class
+        self.Redirect = redirect_class
+        self.Repository = repository_class
+        self.User = user_class
+
+        self.repo_api = repo_api
 
         choices = [self.jinja_loader,
                    FileSystemLoader(os.path.join(
@@ -46,16 +38,14 @@ class ScmFlask(SrhtFlask):
         @self.context_processor
         def inject():
             return {
-                "lookup_user": lookup_user
+                "lookup_user": self.lookup_user
             }
 
         @self.login_manager.user_loader
         def user_loader(username):
             # TODO: Switch to a session token
-            return User.query.filter(User.username == username).one_or_none()
+            return self.User.query.filter(
+                    self.User.username == username).one_or_none()
 
-    def lookup_or_register(self, exchange, profile, scopes):
-        return lookup_or_register(self.db, exchange, profile, scopes)
-
-    def get_repo_api(self):
-        return self._repo_api_class(self.db)
+    def lookup_user(self, email):
+        return self.User.query.filter(self.User.email == email).one_or_none()

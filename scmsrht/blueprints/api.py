@@ -1,16 +1,12 @@
-from flask import Blueprint, request, redirect, abort, url_for
-from scmsrht.types import Repository, RepoVisibility, User, Webhook, Redirect
+from flask import Blueprint, current_app, request, redirect, abort, url_for
+from scmsrht.repos.redirect import BaseRedirectMixin
+from scmsrht.repos.repository import RepoVisibility
 from scmsrht.access import UserAccess, has_access, get_repo, check_repo
 from srht.validation import Validation, valid_url
 from srht.oauth import oauth
 from srht.database import db
 
 api = Blueprint("api", __name__)
-
-def _on_api_registered(state):
-    state.blueprint.repo_api = state.app.get_repo_api()
-
-api.record(_on_api_registered)
 
 repo_json = lambda r: {
     "id": r.id,
@@ -35,6 +31,7 @@ wh_json = lambda wh: {
 @oauth("repos")
 def repos_GET(oauth_token):
     start = request.args.get('start') or -1
+    Repository = current_app.Repository
     repos = Repository.query.filter(Repository.owner_id == oauth_token.user_id)
     if start != -1:
         repos = repos.filter(Repository.id <= start)
@@ -52,20 +49,22 @@ def repos_GET(oauth_token):
 @api.route("/api/repos", methods=["POST"])
 @oauth("repos:write")
 def repos_POST(oauth_token):
-    if not api.repo_api:
+    if not current_app.repo_api:
         abort(501)
     valid = Validation(request)
-    repo = api.repo_api.create_repo(valid, oauth_token.user)
+    repo = current_app.repo_api.create_repo(valid, oauth_token.user)
     if not valid.ok:
         return valid.response
     return repo_json(repo)
 
 @api.route("/api/repos/~<owner>")
 def repos_username_GET(owner):
+    User = current_app.User
     user = User.query.filter(User.username == owner).first()
     if not user:
         abort(404)
     start = request.args.get('start') or -1
+    Repository = current_app.Repository
     repos = (Repository.query
         .filter(Repository.owner_id == user.id)
         .filter(Repository.visibility == RepoVisibility.public)
@@ -86,7 +85,7 @@ def repos_username_GET(owner):
 @api.route("/api/repos/~<owner>/<name>")
 def repos_by_name_GET(owner, name):
     user, repo = check_repo(owner, name)
-    if isinstance(repo, Redirect):
+    if isinstance(repo, BaseRedirectMixin):
         return redirect(url_for(".repos_by_name_GET",
             owner=owner, name=repo.new_repo.name))
     return repo_json(repo)
@@ -100,7 +99,7 @@ def prop(valid, resource, prop, **kwargs):
 @oauth("repos:write")
 def repos_by_name_PUT(oauth_token, owner, name):
     user, repo = check_repo(owner, name, authorized=oauth_token.user)
-    if isinstance(repo, Redirect):
+    if isinstance(repo, BaseRedirectMixin):
         abort(404)
     valid = Validation(request)
     prop(valid, repo, "visibility", cls=RepoVisibility)

@@ -1,9 +1,9 @@
-from flask import abort
 from datetime import datetime
 from enum import IntFlag
+from flask import abort, current_app
 from flask_login import current_user
-from scmsrht.types import User, Repository, RepoVisibility, Redirect
-from scmsrht.types import Access, AccessMode
+from scmsrht.repos.access import AccessMode
+from scmsrht.repos.repository import RepoVisibility
 from srht.database import db
 
 class UserAccess(IntFlag):
@@ -13,9 +13,11 @@ class UserAccess(IntFlag):
     manage = 4
 
 def check_repo(user, repo, authorized=current_user):
+    User = current_app.User
     u = User.query.filter(User.username == user).first()
     if not u:
         abort(404)
+    Repository = current_app.Repository
     _repo = Repository.query.filter(Repository.owner_id == u.id)\
             .filter(Repository.name == repo).first()
     if not _repo:
@@ -27,13 +29,16 @@ def check_repo(user, repo, authorized=current_user):
 
 def get_repo(owner_name, repo_name):
     if owner_name[0] == "~":
+        User = current_app.User
         user = User.query.filter(User.username == owner_name[1:]).first()
         if user:
+            Repository = current_app.Repository
             repo = Repository.query.filter(Repository.owner_id == user.id)\
                 .filter(Repository.name == repo_name).first()
         else:
             repo = None
         if user and not repo:
+            Redirect = current_app.Redirect
             repo = (Redirect.query
                     .filter(Redirect.owner_id == user.id)
                     .filter(Redirect.name == repo_name)
@@ -49,7 +54,7 @@ def get_repo_or_redir(owner, repo):
         abort(404)
     if not has_access(repo, UserAccess.read):
         abort(401)
-    if isinstance(repo, Redirect):
+    if isinstance(repo, current_app.Redirect):
         view_args = request.view_args
         if not "repo" in view_args or not "owner" in view_args:
             return redirect(url_for(".summary",
@@ -65,7 +70,7 @@ def get_access(repo, user=None):
         user = current_user
     if not repo:
         return UserAccess.none
-    if isinstance(repo, Redirect):
+    if isinstance(repo, current_app.Redirect):
         # Just pretend they have full access for long enough to do the redirect
         return UserAccess.read | UserAccess.write | UserAccess.manage
     if not user:
@@ -75,7 +80,8 @@ def get_access(repo, user=None):
         return UserAccess.none
     if repo.owner_id == user.id:
         return UserAccess.read | UserAccess.write | UserAccess.manage
-    acl = Access.query.filter(Access.repo_id == repo.id).first()
+    acl = current_app.Access.query.filter(
+            current_app.Access.repo_id == repo.id).first()
     if acl:
         acl.updated = datetime.utcnow()
         db.session.commit()

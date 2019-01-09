@@ -1,26 +1,18 @@
-from scmsrht.types import Repository, RepoVisibility, Redirect
-import re
+from srht.database import db
+from scmsrht.repos.repository import RepoVisibility
+import abc
 import os.path
+import re
 import shutil
 import subprocess
 
-def validate_name(valid, owner, repo_name):
-    if not valid.ok:
-        return None
-    valid.expect(re.match(r'^[a-z._-][a-z0-9._-]*$', repo_name),
-            "Name must match [a-z._-][a-z0-9._-]*", field="name")
-    existing = (Repository.query
-            .filter(Repository.owner_id == owner.id)
-            .filter(Repository.name.ilike(repo_name))
-            .first())
-    if existing and existing.visibility == RepoVisibility.autocreated:
-        return existing
-    valid.expect(not existing, "This name is already in use.", field="name")
-    return None
-
-class RepoApi:
-    def __init__(self, db):
-        self.db = db
+class AbstractRepoApi(abc.ABC):
+    """
+    Implements a base API for repository management.
+    """
+    def __init__(self, redirect_class, repository_class):
+        self.Redirect = redirect_class
+        self.Repository = repository_class
 
     def get_repo_path(self, owner, repo_name):
         raise NotImplementedError(
@@ -37,17 +29,17 @@ class RepoApi:
             return None
 
         if not repo:
-            repo = Repository()
+            repo = self.Repository()
             repo.name = repo_name
             repo.owner_id = owner.id
             repo.path = self.get_repo_path(owner, repo_name)
-            self.db.session.add(repo)
-            self.db.session.flush()
+            db.session.add(repo)
+            db.session.flush()
             self.do_init_repo(owner, repo)
 
         repo.description = description
         repo.visibility = visibility
-        self.db.session.commit()
+        db.session.commit()
         return repo
 
     def do_init_repo(self, owner, repo):
@@ -64,18 +56,18 @@ class RepoApi:
         if not valid.ok:
             return None
 
-        _redirect = Redirect()
+        _redirect = self.Redirect()
         _redirect.name = repo.name
         _redirect.path = repo.path
         _redirect.owner_id = repo.owner_id
         _redirect.new_repo_id = repo.id
-        self.db.session.add(_redirect)
+        db.session.add(_redirect)
 
         self.do_move_repo(owner, repo, repo_name)
 
         repo.path = self.get_repo_path(owner, repo_name)
         repo.name = repo_name
-        self.db.session.commit()
+        db.session.commit()
         return repo
 
     def do_move_repo(self, owner, repo, new_repo_name):
@@ -84,16 +76,34 @@ class RepoApi:
 
     def delete_repo(self, repo):
         self.do_delete_repo(repo)
-        self.db.session.delete(repo)
-        self.db.session.commit()
+        db.session.delete(repo)
+        db.session.commit()
 
     def do_delete_repo(self, repo):
         raise NotImplementedError(
             "{} doesn't implement do_delete_repo.".format(self.__class__))
 
-class SimpleRepoApi(RepoApi):
-    def __init__(self, db, repos_path):
-        super().__init__(db)
+    def validate_name(self, valid, owner, repo_name):
+        """
+        Checks if a name is available for creating a new repository.
+        """
+        if not valid.ok:
+            return None
+        valid.expect(re.match(r'^[a-z._-][a-z0-9._-]*$', repo_name),
+                "Name must match [a-z._-][a-z0-9._-]*", field="name")
+        existing = (self.Repository.query
+                .filter(self.Repository.owner_id == owner.id)
+                .filter(self.Repository.name.ilike(repo_name))
+                .first())
+        if existing and existing.visibility == RepoVisibility.autocreated:
+            return existing
+        valid.expect(not existing, "This name is already in use.", field="name")
+        return None
+
+class SimpleRepoApi(AbstractRepoApi):
+    def __init__(self, repos_path, redirect_class, repository_class):
+        super().__init__(redirect_class=redirect_class,
+                repository_class=repository_class)
         self.repos_path = repos_path
 
     def get_repo_path(self, owner, repo_name):

@@ -1,10 +1,10 @@
-from flask import Blueprint, request
+from flask import Blueprint, current_app, request
 from flask import render_template, abort
 from flask_login import current_user
 import requests
 from srht.config import cfg
 from srht.flask import paginate_query
-from scmsrht.types import User, Repository, RepoVisibility
+from scmsrht.repos.repository import RepoVisibility
 from sqlalchemy import or_
 
 public = Blueprint('public', __name__)
@@ -14,6 +14,7 @@ meta_uri = cfg("meta.sr.ht", "origin")
 @public.route("/")
 def index():
     if current_user:
+        Repository = current_app.Repository
         repos = (Repository.query
                 .filter(Repository.owner_id == current_user.id)
                 .filter(Repository.visibility != RepoVisibility.autocreated)
@@ -26,10 +27,12 @@ def index():
 @public.route("/~<username>")
 @public.route("/~<username>/")
 def user_index(username):
+    User = current_app.User
     user = User.query.filter(User.username == username).first()
     if not user:
         abort(404)
     search = request.args.get("search")
+    Repository = current_app.Repository
     repos = Repository.query\
             .filter(Repository.owner_id == user.id)
     if not current_user or current_user.id != user.id:
