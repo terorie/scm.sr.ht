@@ -24,7 +24,7 @@ class AbstractRepoApi(abc.ABC):
         visibility = valid.optional("visibility",
                 default="public",
                 cls=RepoVisibility)
-        repo = validate_name(valid, owner, repo_name)
+        repo = self.validate_name(valid, owner, repo_name)
         if not valid.ok:
             return None
 
@@ -52,7 +52,7 @@ class AbstractRepoApi(abc.ABC):
                 "This is the same name as before.", field="name")
         if not valid.ok:
             return None
-        validate_name(valid, owner, repo_name)
+        self.validate_name(valid, owner, repo_name)
         if not valid.ok:
             return None
 
