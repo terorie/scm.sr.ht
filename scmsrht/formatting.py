@@ -1,6 +1,5 @@
 import os.path
 import pygments
-import urllib.parse
 from datetime import timedelta
 from jinja2 import Markup
 from pygments import highlight
@@ -10,31 +9,16 @@ from srht.markdown import markdown
 from srht.rst import rst_to_html
 from scmsrht.redis import redis
 
-def get_clone_urls(origin_url, ssh_username, owner, repo):
-    """ Gets a standard list of clone URLs to show on a repository's
-        summary page (read-only https, read/write ssh).
-    """
-    # Remove the scheme and port from the origin URL.
-    parsed_origin_url = urllib.parse.urlparse(origin_url)
-    base = parsed_origin_url.hostname
+def get_formatted_readme(cache_prefix, file_finder, content_getter):
+    readme_names = ['README.md', 'README.rst']
+    for name in readme_names:
+        content_hash, user_obj = file_finder(name)
+        if content_hash:
+            return format_readme(cache_prefix, content_hash, name,
+                        content_getter, user_obj)
+    return None
 
-    clone_urls = [
-        {'desc': "read-only", 'url': "https://{}/{}/{}", 'link': True},
-        {'desc': "read/write", 'url': "ssh://%s@{}/{}/{}" % ssh_username},
-    ]
-    for curl in clone_urls:
-        curl['url'] = curl['url'].format(base, owner.canonical_name, repo.name)
-    return clone_urls
-
-def get_readme_names():
-    """ Gets a list of supported `README` file names. The first one that's
-        found can be passed to `format_readme` below.
-    """
-    return [
-        'README.md',
-        'README.rst']
-
-def format_readme(cache_prefix, content_hash, name, content_getter):
+def format_readme(cache_prefix, content_hash, name, content_getter, user_obj):
     """ Formats a `README` file for display on a repository's summary page.
     """
     key = f"{cache_prefix}:readme:{content_hash}:v4"
@@ -43,7 +27,7 @@ def format_readme(cache_prefix, content_hash, name, content_getter):
         return Markup(html.decode())
 
     try:
-        raw = content_getter()
+        raw = content_getter(user_obj)
     except:
         raw = "Error decoding readme - is it valid UTF-8?"
 
@@ -84,7 +68,7 @@ def _get_lexer(name, data):
         except pygments.util.ClassNotFound:
             return TextLexer()
 
-def highlight_file(cache_prefix, name, content_hash, content):
+def get_highlighted_file(cache_prefix, name, content_hash, content):
     """ Highlights a file for display in a repository's browsing UI.
     """
     key = f"{cache_prefix}:highlight:{content_hash}"
