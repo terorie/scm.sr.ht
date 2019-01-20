@@ -8,15 +8,8 @@ from pygments.formatters import HtmlFormatter
 from srht.markdown import markdown
 from scmsrht.redis import redis
 
-try:
-    from srht.rst import rst_to_html
-except ImportError:
-    # No support for reStructuredText
-    def rst_to_html(txt):
-        return txt
-
 def get_formatted_readme(cache_prefix, file_finder, content_getter):
-    readme_names = ['README.md', 'README.rst']
+    readme_names = ['README.md']
     for name in readme_names:
         content_hash, user_obj = file_finder(name)
         if content_hash:
@@ -40,8 +33,6 @@ def format_readme(cache_prefix, content_hash, name, content_getter, user_obj):
     basename, ext = os.path.splitext(name)
     if ext == '.md':
         html = markdown(raw, ["h1", "h2", "h3", "h4", "h5"])
-    elif ext == '.rst':
-        html = rst_to_html(raw)
     else:
         # Unsupported/unknown markup type.
         html = raw
