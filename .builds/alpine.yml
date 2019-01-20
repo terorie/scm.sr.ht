@@ -5,14 +5,14 @@ repositories:
     https://mirror.sr.ht/alpine/sr.ht/alpine%40sr.ht.rsa.pub
     alpine@sr.ht.rsa.pub
 packages:
-  - python3
-  - py-setuptools
   - nodejs
-  - nodejs-npm
-  - xz
+  - py-setuptools
+  - py3-srht
+  - python3
   - rsync
+  - xz
 sources:
-  - https://git.sr.ht/~ludovicchabant/scm.sr.ht
+  - https://git.sr.ht/~sircmpwn/scm.sr.ht
   - https://git.sr.ht/~sircmpwn/sr.ht-apkbuilds
 environment:
   project: scm.sr.ht
@@ -36,12 +36,12 @@ tasks:
       fi
       echo "pkgver=$pkgver" >> ~/.buildenv
       git archive --prefix=srht-$pkgver/ HEAD | xz \
-        > ~/sr.ht-apkbuilds/sr.ht/py3-srht/srht-$pkgver.tar.xz
+        > ~/sr.ht-apkbuilds/sr.ht/py3-scmsrht/$project-$pkgver.tar.xz
   - package: |
-      cd sr.ht-apkbuilds/sr.ht/py3-srht
+      cd sr.ht-apkbuilds/sr.ht/py3-scmsrht
       echo 'PACKAGER_PRIVKEY="/home/build/.abuild/alpine@sr.ht.rsa"' >> \
         ~/.abuild/abuild.conf
-      prev_pkgver=$(apk search -x py3-srht | cut -d '-' -f3-)
+      prev_pkgver=$(apk search -x py3-scmsrht | cut -d '-' -f3-)
       prev_pkgrel=$(printf "%s" "$prev_pkgver" | cut -d'-' -f2 | cut -c2-)
       prev_pkgver=$(printf "%s" "$prev_pkgver" | cut -d'-' -f1)
       if [ "$prev_pkgver" = "$pkgver" ]
@@ -62,7 +62,7 @@ tasks:
   - publish: |
       cd ~/packages/sr.ht/x86_64
       sshopts="-o StrictHostKeyChecking=no"
-      ssh $sshopts $repo_server rm $repo_path/'py3-srht*.apk'
+      ssh $sshopts $repo_server rm $repo_path/'py3-scmsrht*.apk'
       rsync --blocking-io \
         -rPe "ssh $sshopts" *.apk $repo_server:$repo_path/
       ssh $sshopts $repo_server find $repo_path -type f -name '*.apk' -print0 |

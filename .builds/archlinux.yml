@@ -12,7 +12,7 @@ packages:
   - rsync
   - pacman-contrib
 sources:
-  - https://git.sr.ht/~ludovicchabant/scm.sr.ht
+  - https://git.sr.ht/~sircmpwn/core.sr.ht
   - https://git.sr.ht/~sircmpwn/sr.ht-pkgbuilds
 environment:
   project: scm.sr.ht
@@ -29,11 +29,11 @@ tasks:
       cd ${project}
       pkgver=$(git describe | sed -e 's/-/_/g')
       echo "pkgver=$pkgver" >> ~/.buildenv
-      git archive -o ~/sr.ht-pkgbuilds/python-srht/srht-$pkgver.tar.xz \
+      git archive -o ~/sr.ht-pkgbuilds/python-scmsrht/$project-$pkgver.tar.xz \
         --prefix=srht-$pkgver/ HEAD
   - package: |
-      cd sr.ht-pkgbuilds/python-srht
-      prev_pkgver=$(pacman -Si python-srht | grep Version | cut -d ':' -f2 | cut -d ' ' -f2)
+      cd sr.ht-pkgbuilds/python-scmsrht
+      prev_pkgver=$(pacman -Si python-scmsrht | grep Version | cut -d ':' -f2 | cut -d ' ' -f2)
       prev_pkgrel=$(printf "%s" "$prev_pkgver" | cut -d'-' -f2)
       prev_pkgver=$(printf "%s" "$prev_pkgver" | cut -d'-' -f1)
       if [ "$prev_pkgver" == "$pkgver" ]
@@ -50,10 +50,10 @@ tasks:
       cd ~/${project}
       git describe --exact-match HEAD || complete-build
   - publish: |
-      cd sr.ht-pkgbuilds/python-srht
+      cd sr.ht-pkgbuilds/python-scmsrht
       sshopts="-o StrictHostKeyChecking=no"
       rsync --blocking-io \
         -rPe "ssh $sshopts" *.pkg.tar.xz{,.sig} $repo_server:$repo_path/
       ssh $sshopts $repo_server repo-add -n -R \
         $repo_path/sr.ht.db.tar.gz \
-        $repo_path/python-srht-$pkgver-$pkgrel-any.pkg.tar.xz
+        $repo_path/python-scmsrht-$pkgver-$pkgrel-any.pkg.tar.xz
