@@ -6,8 +6,14 @@ from pygments import highlight
 from pygments.lexers import guess_lexer, guess_lexer_for_filename, TextLexer
 from pygments.formatters import HtmlFormatter
 from srht.markdown import markdown
-from srht.rst import rst_to_html
 from scmsrht.redis import redis
+
+try:
+    from srht.rst import rst_to_html
+except ImportError:
+    # No support for reStructuredText
+    def rst_to_html(txt):
+        return txt
 
 def get_formatted_readme(cache_prefix, file_finder, content_getter):
     readme_names = ['README.md', 'README.rst']
