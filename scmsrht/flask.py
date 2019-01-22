@@ -41,11 +41,5 @@ class ScmSrhtFlask(SrhtFlask):
                 "lookup_user": self.lookup_user
             }
 
-        @self.login_manager.user_loader
-        def user_loader(username):
-            # TODO: Switch to a session token
-            return self.User.query.filter(
-                    self.User.username == username).one_or_none()
-
     def lookup_user(self, email):
         return self.User.query.filter(self.User.email == email).one_or_none()
