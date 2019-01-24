@@ -12,7 +12,7 @@ packages:
   - rsync
   - pacman-contrib
 sources:
-  - https://git.sr.ht/~sircmpwn/core.sr.ht
+  - https://git.sr.ht/~sircmpwn/scm.sr.ht
   - https://git.sr.ht/~sircmpwn/sr.ht-pkgbuilds
 environment:
   project: scm.sr.ht
@@ -30,7 +30,7 @@ tasks:
       pkgver=$(git describe | sed -e 's/-/_/g')
       echo "pkgver=$pkgver" >> ~/.buildenv
       git archive -o ~/sr.ht-pkgbuilds/python-scmsrht/$project-$pkgver.tar.xz \
-        --prefix=srht-$pkgver/ HEAD
+        --prefix=scm.sr.ht-$pkgver/ HEAD
   - package: |
       cd sr.ht-pkgbuilds/python-scmsrht
       prev_pkgver=$(pacman -Si python-scmsrht | grep Version | cut -d ':' -f2 | cut -d ' ' -f2)

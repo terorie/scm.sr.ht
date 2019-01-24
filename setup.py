@@ -20,7 +20,7 @@ setup(
   author = 'Ludovic Chabant',
   author_email = 'ludovic@chabant.com',
   url = 'https://git.sr.ht/~sircmpwn/scm.sr.ht',
-  install_requires = ['srht', 'flask-login', 'pygments'],
+  install_requires = ['srht'],
   license = 'AGPL-3.0',
   package_data={
       'scmsrht': [
