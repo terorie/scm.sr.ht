@@ -2,7 +2,7 @@
 
 <div class="container">
   <div class="row">
-    <div class="col-md-6">
+    <div class="col-md-8">
       <div class="event-list">
         {% for tag in tags %}
         <div class="event">
@@ -27,17 +27,34 @@
         {{ pagination() }}
       </div>
     </div>
-    <div class="col-md-6">
+    <div class="col-md-4">
       <h3>Branches</h3>
       <div class="event-list">
         {% for branch in branches %}
         <div class="event">
-          {{branch.name}}
-          {{ utils.commit_event(repo, branch, skip_body=True) }}
           <a
-            href="{{branch.browse_url}}"
-            class="btn btn-block {{ "btn-primary" if branch.is_default else "btn-default" }}"
-          >browse {{icon("caret-right")}}</a>
+            id="log-{{branch.node}}"
+            href="#log-{{branch.node}}"
+            class="text-muted pull-right"
+          >{{ branch.date | date }}</a>
+          {{branch.name}}
+          {{ utils.commit_event(repo, branch,
+            skip_body=True, skip_date=True, skip_refs=True) }}
+          <div class="row" style="margin-top: 0.5rem">
+            <div class="col">
+              <a
+                href="{{branch.browse_url}}"
+                class="btn btn-block {{ "btn-primary"
+                  if branch.is_default else "btn-default" }}"
+              >browse {{icon("caret-right")}}</a>
+            </div>
+            <div class="col">
+              <a
+                href="{{branch.log_url}}"
+                class="btn btn-block btn-default"
+              >log {{icon("caret-right")}}</a>
+            </div>
+          </div>
         </div>
         {% endfor %}
       </div>

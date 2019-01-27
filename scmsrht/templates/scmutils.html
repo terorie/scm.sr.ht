@@ -9,7 +9,11 @@
 {% endfor -%}
 {% endmacro %}
 
-{% macro commit_event(repo, commit, full=False, skip_body=False) %}
+{% macro commit_event(repo, commit,
+  full=False,
+  skip_body=False,
+  skip_date=False,
+  skip_refs=False) %}
 <div>
   {{commit.prefix|default('')}}<a href="{{commit.url}}" title="{{commit.long_id}}"
   >{{commit.short_id}}</a>
@@ -32,7 +36,7 @@
   </span>
   {% endif %}
 
-  {% if commit.refs %}
+  {% if commit.refs and not skip_refs %}
   <span style="margin-left: 0.5rem">
     {% for ref in commit.refs %}
     <a class="ref {{ref.type}}" href="{{ref.url}}">{{ref.name}}</a>
@@ -40,11 +44,13 @@
   </span>
   {% endif %}
 
+  {% if not skip_date %}
   <a
     id="log-{{commit.long_id}}"
     href="#log-{{commit.long_id}}"
     class="text-muted pull-right"
   >{{ commit.date | date }}</a>
+  {% endif %}
 </div>
 {% if not skip_body %}
 {% if full %}
