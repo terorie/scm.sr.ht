@@ -89,8 +89,8 @@ class AbstractRepoApi(abc.ABC):
         """
         if not valid.ok:
             return None
-        valid.expect(re.match(r'^[a-z._-][a-z0-9._-]*$', repo_name),
-                "Name must match [a-z._-][a-z0-9._-]*", field="name")
+        valid.expect(re.match(r'^[A-Za-z._-][A-Za-z0-9._-]*$', repo_name),
+                "Name must match [A-Za-z._-][A-Za-z0-9._-]*", field="name")
         existing = (self.Repository.query
                 .filter(self.Repository.owner_id == owner.id)
                 .filter(self.Repository.name.ilike(repo_name))
