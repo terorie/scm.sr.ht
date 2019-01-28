@@ -36,7 +36,7 @@
       </div>
     </div>
     <div class="col-md-2">
-      <h3>{{refstitle}}</h3>
+      <h3>{{refstitle|default("refs")}}</h3>
       <dl>
         {% for ref in refs %}
         <dt>{{ ref.name }}</dt>
