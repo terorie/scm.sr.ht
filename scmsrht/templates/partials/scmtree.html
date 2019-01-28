@@ -25,46 +25,55 @@
 <div class="container-fluid">
   <div class="row" style="margin-bottom: 1rem">
     <div class="col-md-12">
+      {# chromium has a hard limit on 1000 rows per grid #}
+      {% for index in range(0, len(entries), 501) %}
+      {% set group = entries[index:index + 501] %}
       <div class="tree-list">
-      {% if parent_path_url -%}
-      <div class="mode"></div>
-      <div class="name tree">
-        <a href="{{parent_path_url}}">..</a>
-      </div>
-      <div class="commit"></div>
-      <div class="date"></div>
-      <div class="size"></div>
-      {% endif -%}
-      {% for entry in entries -%}
-      <div class="mode">
-        {% if entry.type == 'file' -%}
-        <span title="{{"{0:0o}".format(entry.perm)}}">
-          {{stat.filemode(entry.perm)}}
-        </span>
-        {% else -%}
-        <span>d---------</span>
+        {% if parent_path_url -%}
+        <div class="mode"></div>
+        <div class="name tree">
+          <a href="{{parent_path_url}}">..</a>
+        </div>
+        <div class="commit"></div>
+        <div class="date"></div>
+        <div class="size"></div>
         {% endif -%}
-      </div>
-      <div class="name {{entry.type}}">
-        <a href="{{entry.browse_url}}">{{entry.name}}{% if entry.type == "dir" %}/{% endif %}</a>
-      </div>
-      <div class="commit">
-        {% if entry.commit_url %}
-        <a href="{{entry.commit_url}}">{{trim_commit(entry.commit.message)}}</a>
-        {% endif %}
-      </div>
-      <div class="date">
-        {% if entry.commit %}
-        {{ commit_time(entry.commit) | date }}
-        {% endif %}
-      </div>
-      <div class="size">
-        {% if entry.type == "file" %}
-        <span title="{{ entry.size }} bytes">
-          {{humanize.naturalsize(entry.size,
-            binary=True).replace("Byte", "byte")}}
-        </span>
-        {% endif %}
+        {% for entry in group -%}
+        <div class="mode">
+          <span title="{{"{0:0o}".format(entry.perm)}}">
+          {% if entry.permletter %}
+            <span>{{entry.permletter}}---------</span>
+          {% else %}
+            {{stat.filemode(entry.perm)}}
+          {% endif %}
+          </span>
+        </div>
+        <div class="name {{entry.type}}">
+          {% if entry.type == "commit" %}
+          {{entry.name}} @ {{ entry.id }}
+          {% else %}
+          <a href="{{entry.browse_url}}">{{entry.name}}{% if entry.type == "dir" %}/{% endif %}</a>
+          {% endif %}
+        </div>
+        <div class="commit">
+          {% if entry.commit_url %}
+          <a href="{{entry.commit_url}}">{{trim_commit(entry.commit.message)}}</a>
+          {% endif %}
+        </div>
+        <div class="date">
+          {% if entry.commit %}
+          {{ entry.commit.date | date }}
+          {% endif %}
+        </div>
+        <div class="size">
+          {% if entry.type == "file" %}
+          <span title="{{ entry.size }} bytes">
+            {{humanize.naturalsize(entry.size,
+              binary=True).replace("Byte", "byte")}}
+          </span>
+          {% endif %}
+        </div>
+        {% endfor -%}
       </div>
       {% endfor -%}
     </div>
