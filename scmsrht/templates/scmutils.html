@@ -23,7 +23,7 @@
   <a href="{{url_for("public.user_index",
     username=author_user.username)}}">{{commit.author_name}}</a>
   {% else %}
-  {{commit.author.name}}
+  {{commit.author_name}}
   {% endif %}
 
   {% if commit.parents %}
