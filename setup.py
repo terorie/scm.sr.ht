@@ -25,6 +25,7 @@ setup(
   package_data={
       'scmsrht': [
           'templates/*.html',
+          'templates/partials/*.html',
       ]
   }
 )
