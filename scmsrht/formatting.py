@@ -9,7 +9,7 @@ from srht.markdown import markdown
 from scmsrht.redis import redis
 
 def get_formatted_readme(cache_prefix, file_finder, content_getter):
-    readme_names = ['README.md']
+    readme_names = ['README.md', 'README.markdown']
     for name in readme_names:
         content_hash, user_obj = file_finder(name)
         if content_hash:
