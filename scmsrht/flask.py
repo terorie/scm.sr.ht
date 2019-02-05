@@ -5,9 +5,9 @@ import os
 
 class ScmSrhtFlask(SrhtFlask):
     def __init__(self, site, name, *,
-                access_class, redirect_class, repository_class, user_class,
-                repo_api,
-                **kwargs):
+            access_class, redirect_class,
+            repository_class, user_class,
+            repo_api, **kwargs):
         super().__init__(site, name, **kwargs)
 
         self.User = user_class
@@ -19,10 +19,8 @@ class ScmSrhtFlask(SrhtFlask):
 
         self.repo_api = repo_api
 
-        choices = [self.jinja_loader,
-                   FileSystemLoader(os.path.join(
-                       os.path.dirname(__file__),
-                       "templates"))]
+        choices = [self.jinja_loader, FileSystemLoader(os.path.join(
+            os.path.dirname(__file__), "templates"))]
         self.jinja_loader = ChoiceLoader(choices)
 
         self.url_map.strict_slashes = False
