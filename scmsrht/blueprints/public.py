@@ -4,6 +4,7 @@ from flask_login import current_user
 import requests
 from srht.config import cfg
 from srht.flask import paginate_query
+from srht.search import search
 from scmsrht.repos.repository import RepoVisibility
 from sqlalchemy import or_
 
@@ -31,17 +32,16 @@ def user_index(username):
     user = User.query.filter(User.username == username).first()
     if not user:
         abort(404)
-    search = request.args.get("search")
+    terms = request.args.get("search")
     Repository = current_app.Repository
     repos = Repository.query\
             .filter(Repository.owner_id == user.id)
     if not current_user or current_user.id != user.id:
         # TODO: ACLs
         repos = repos.filter(Repository.visibility == RepoVisibility.public)
-    if search:
-        repos = repos.filter(or_(
-                Repository.name.ilike("%" + search + "%"),
-                Repository.description.ilike("%" + search + "%")))
+    if terms:
+        repos = search(repos, terms,
+                [Repository.name, Repository.description], {})
     repos = repos.order_by(Repository.updated.desc())
     repos, pagination = paginate_query(repos)
 
@@ -55,4 +55,4 @@ def user_index(username):
 
     return render_template("user.html",
             user=user, repos=repos, profile=profile,
-            search=search, **pagination)
+            search=terms, **pagination)
