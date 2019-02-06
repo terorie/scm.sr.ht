@@ -21,9 +21,8 @@ def index():
                 .filter(Repository.visibility != RepoVisibility.autocreated)
                 .order_by(Repository.updated.desc())
                 .limit(10)).all()
-    else:
-        repos = None
-    return render_template("index.html", repos=repos)
+        return render_template("dashboard.html", repos=repos)
+    return render_template("index.html")
 
 @public.route("/~<username>")
 @public.route("/~<username>/")
