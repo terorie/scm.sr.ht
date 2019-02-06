@@ -2,7 +2,6 @@
 {% block content %}
 <div class="container">
   <div class="row">
-    {% if current_user %}
     <div class="col-md-4">
       <p>
         {% block welcome_user %}{% endblock %}
@@ -36,13 +35,6 @@
       <a href="/~{{current_user.username}}" class="btn btn-default pull-right">
         More on your profile {{icon("caret-right")}}
       </a>
-      {% endif %}
-    </div>
-    {% else %}
-    <div class="col-md-6">
-      <p>
-        {% block welcome_anon %}{% endblock %}
-      </p>
       {% endif %}
     </div>
   </div>
