@@ -3,9 +3,10 @@ from scmsrht.repos.redirect import BaseRedirectMixin
 from scmsrht.repos.repository import RepoVisibility
 from scmsrht.access import UserAccess, has_access, get_repo, check_repo
 from srht.validation import Validation, valid_url
-from srht.oauth import oauth
+from srht.oauth import oauth, current_token
 from srht.database import db
 
+# Disclaimer: this API is undocumented and subject to change
 api = Blueprint("api", __name__)
 
 repo_json = lambda r: {
@@ -29,10 +30,11 @@ wh_json = lambda wh: {
 
 @api.route("/api/repos")
 @oauth("repos")
-def repos_GET(oauth_token):
+def repos_GET():
     start = request.args.get('start') or -1
     Repository = current_app.Repository
-    repos = Repository.query.filter(Repository.owner_id == oauth_token.user_id)
+    repos = Repository.query.filter(
+            Repository.owner_id == current_token.user_id)
     if start != -1:
         repos = repos.filter(Repository.id <= start)
     repos = repos.order_by(Repository.id.desc()).limit(11).all()
@@ -48,11 +50,11 @@ def repos_GET(oauth_token):
 
 @api.route("/api/repos", methods=["POST"])
 @oauth("repos:write")
-def repos_POST(oauth_token):
+def repos_POST():
     if not current_app.repo_api:
         abort(501)
     valid = Validation(request)
-    repo = current_app.repo_api.create_repo(valid, oauth_token.user)
+    repo = current_app.repo_api.create_repo(valid, current_token.user)
     if not valid.ok:
         return valid.response
     return repo_json(repo)
@@ -97,8 +99,8 @@ def prop(valid, resource, prop, **kwargs):
 
 @api.route("/api/repos/~<owner>/<name>", methods=["PUT"])
 @oauth("repos:write")
-def repos_by_name_PUT(oauth_token, owner, name):
-    user, repo = check_repo(owner, name, authorized=oauth_token.user)
+def repos_by_name_PUT(owner, name):
+    user, repo = check_repo(owner, name, authorized=current_token.user)
     if isinstance(repo, BaseRedirectMixin):
         abort(404)
     valid = Validation(request)
@@ -106,52 +108,3 @@ def repos_by_name_PUT(oauth_token, owner, name):
     prop(valid, repo, "description", cls=str)
     db.session.commit()
     return repo_json(repo)
-
-@api.route("/api/webhooks")
-@oauth("webhooks")
-def webhooks_GET(oauth_token):
-    start = request.args.get('start') or -1
-    webhooks = (Webhook.query
-        .filter(Webhook.user_id == oauth_token.user_id)
-        .filter(Webhook.repo_id == None)
-    )
-    if start != -1:
-        webhooks = webhooks.filter(Webhook.id <= start)
-    webhooks = webhooks.order_by(Webhook.id.desc()).limit(11).all()
-    if len(webhooks) != 11:
-        next_id = -1
-    else:
-        next_id = webhooks[-1].id
-        webhooks = webhooks[:10]
-    return {
-        "next": next_id,
-        "results": [wh_json(wh) for wh in webhooks]
-    }
-
-@api.route("/api/webhooks", methods=["POST"])
-@oauth("webhooks:write")
-def webhooks_POST(oauth_token):
-    valid = Validation(request)
-    desc = valid.optional("description", cls=str)
-    url = valid.require("url")
-    valid.expect(not url or valid_url(url), "This URL is invalid", field="url")
-    validate_ssl = valid.optional("validate_ssl", cls=bool, default=True)
-    repo = valid.optional("repo", cls=str)
-    if repo:
-        [owner, name] = repo.split("/")
-        if owner.starswith("~"):
-            owner = owner[1:]
-        # TODO: don't abort here
-        _, repo = check_repo(owner, name, authorized=oauth_token.user)
-    if not valid.ok:
-        return valid.response
-    wh = Webhook()
-    wh.description = desc
-    wh.url = url
-    wh.validate_ssl = validate_ssl
-    wh.user_id = oauth_token.user_id
-    wh.repo_id = repo.id if repo else None
-    wh.oauth_token_id = oauth_token.id
-    db.session.add(wh)
-    db.session.commit()
-    return wh_json(wh)
